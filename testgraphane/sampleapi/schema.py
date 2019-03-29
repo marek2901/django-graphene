@@ -1,12 +1,40 @@
 import graphene
 from graphene_django import DjangoObjectType
 
-from .models import SampleObject
+from promise import Promise
+from promise.dataloader import DataLoader
+
+from .models import SampleObject, ObjectsChild
+
+
+class SampleTypeChild(DjangoObjectType):
+    class Meta:
+        model = ObjectsChild
+
+
+class ChildrenLoader(DataLoader):
+    def batch_load_fn(self, keys):
+        children_mapping = {}
+        for child in ObjectsChild.objects.filter(parent_id__in=keys):
+            if not children_mapping.get(child.parent_id):
+                children_mapping[child.parent_id] = []
+            children_mapping[child.parent_id].append(child)
+        result = [children_mapping.get(child_id, []) for child_id in keys]
+        return Promise.resolve(result)
+
+
+children_loader = ChildrenLoader()
 
 
 class SampleType(DjangoObjectType):
+    children = graphene.List(lambda: SampleTypeChild)
+
     class Meta:
+        interfaces = (graphene.Node, )
         model = SampleObject
+
+    def resolve_children(self, info, **kwargs):
+        return children_loader.load(self.id)
 
 
 class Query(graphene.ObjectType):
