@@ -23,9 +23,6 @@ class ChildrenLoader(DataLoader):
         return Promise.resolve(result)
 
 
-children_loader = ChildrenLoader()
-
-
 class SampleType(DjangoObjectType):
     class Meta:
         interfaces = (graphene.Node, )
@@ -39,6 +36,8 @@ class Query(graphene.ObjectType):
     all_samples = graphene.List(SampleType)
 
     def resolve_all_samples(self, info, **kwargs):
+        global children_loader
+        children_loader = ChildrenLoader()
         return SampleObject.objects.all()
 
 
