@@ -27,13 +27,11 @@ children_loader = ChildrenLoader()
 
 
 class SampleType(DjangoObjectType):
-    children = graphene.List(lambda: SampleTypeChild)
-
     class Meta:
         interfaces = (graphene.Node, )
         model = SampleObject
 
-    def resolve_children(self, info, **kwargs):
+    def resolve_objectschild_set(self, info, **kwargs):
         return children_loader.load(self.id)
 
 
